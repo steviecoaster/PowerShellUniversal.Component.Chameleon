@@ -1,6 +1,6 @@
 @{
     RootModule        = 'PowerShellUniversal.Component.Chameleon.psm1'
-    ModuleVersion     = '1.1.0'
+    ModuleVersion     = '1.2.0'
     GUID              = '6f1d2c3e-8a47-4b5e-9c1a-2d7e4f0b9a31'
     Author            = 'Stephen Valdinger'
     CompanyName       = 'Unknown'
