@@ -211,6 +211,10 @@ New-UDApp @App
 
 Each theme shows four swatches: primary, secondary, background, and paper.
 
+The `menu` and `select` dropdowns group custom themes under **Saved** and built-in theme names under **Built-in**. Group headings are not selectable, empty groups are hidden, and **Default** stays above the groups when reset is enabled. The `grid` variant remains a flat set of cards.
+
+The Chameleon app's header includes saved themes alongside the full list returned by `Get-UDTheme`, including terminal color schemes. New built-in names are discovered automatically. If a saved theme has the same name as a built-in, the saved theme takes precedence. This is separate from the builder's **Start from** list, which still offers the five curated MUI themes as built-in starting points.
+
 ### Variants
 
 | `-Variant` | Looks like | Good for |
@@ -522,7 +526,11 @@ After replacing the bundle on a server, **restart the app**. PSU registers the J
 
 ### Publishing to PowerShell Gallery
 
-Run the build from the repository root, then publish **only the staged module**, not the repository or the source module folder:
+For each release:
+
+1. Update `ModuleVersion` in [PowerShellUniversal.Component.Chameleon/PowerShellUniversal.Component.Chameleon.psd1](PowerShellUniversal.Component.Chameleon/PowerShellUniversal.Component.Chameleon.psd1). For example, use `1.1.0` for this release. The npm package version does not control the Gallery version.
+2. Run the build from the repository root. It copies the updated manifest and compiled bundle into the output module.
+3. Publish **only the staged module**, not the repository or the source module folder. The example uses `Publish-PSResource` from `Microsoft.PowerShell.PSResourceGet`:
 
 ```powershell
 .\build.ps1
@@ -530,14 +538,14 @@ Run the build from the repository root, then publish **only the staged module**,
 $Publish = @{
     Path = (Join-Path $PWD 'output/PowerShellUniversal.Component.Chameleon')
     Repository = 'PSGallery'
-    NuGetApiKey = $env:PSGALLERY_API_KEY
+    ApiKey = $env:PSGALLERY_API_KEY
 }
-Publish-Module @Publish
+Publish-PSResource @Publish
 ```
 
-Set `PSGALLERY_API_KEY` securely in your environment before publishing. Increment `ModuleVersion` in the source manifest for each release.
+Set `PSGALLERY_API_KEY` securely in your environment before publishing. Each Gallery release needs a new version; an already-published version cannot be overwritten. Do not edit the output manifest directly because the next build replaces it.
 
-The build stages only the manifest, module loader, compiled JavaScript assets, PowerShell functions, app pages, and PSU registration. Git metadata, Node dependencies, React source, build configuration, and documentation stay outside the package. `.gitignore` controls Git tracking; it does **not** control what `Publish-Module` packages. The source module folder does not contain the compiled bundle until it is staged, so always publish from `output`.
+The build stages only the manifest, module loader, compiled JavaScript assets, PowerShell functions, app pages, and PSU registration. Git metadata, Node dependencies, React source, build configuration, and documentation stay outside the package. `.gitignore` controls Git tracking; it does **not** control what `Publish-PSResource` packages. The source module folder does not contain the compiled bundle until it is staged, so always publish from `output`.
 
 ---
 
