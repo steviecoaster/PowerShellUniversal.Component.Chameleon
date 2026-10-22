@@ -17,8 +17,20 @@ function Get-ChameleonStorePath {
         $Path = if ($env:PSU_CHAMELEON_PATH) {
             $env:PSU_CHAMELEON_PATH
         }
+        elseif ($IsWindows) {
+            Join-Path $env:ProgramData 'Chameleon'
+        }
         else {
-            Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) 'UniversalAutomation\Chameleon'
+            $DataRoot = if ($IsMacOS) {
+                Join-Path $HOME 'Library' 'Application Support'
+            }
+            elseif ($env:XDG_DATA_HOME -and [System.IO.Path]::IsPathRooted($env:XDG_DATA_HOME)) {
+                $env:XDG_DATA_HOME
+            }
+            else {
+                Join-Path $HOME '.local' 'share'
+            }
+            Join-Path $DataRoot 'UniversalAutomation' 'Chameleon'
         }
     }
 

@@ -13,7 +13,9 @@ function Save-UDChameleonTheme {
     Optional description shown as a tooltip in the theme picker.
 
     .PARAMETER Path
-    Theme store folder. Defaults to $env:PSU_CHAMELEON_PATH or <ProgramData>\UniversalAutomation\Chameleon.
+    Theme store folder. Defaults to $env:PSU_CHAMELEON_PATH, otherwise $env:ProgramData/Chameleon
+    on Windows, or UniversalAutomation/Chameleon under the XDG data directory on Linux
+    or ~/Library/Application Support on macOS.
 
     .EXAMPLE
     $SaveTheme = @{

@@ -360,8 +360,14 @@ Each theme is a JSON file in the theme store:
 
 | | Path |
 |---|---|
-| Default | `C:\ProgramData\UniversalAutomation\Chameleon` |
+| Windows | `$env:ProgramData\Chameleon` (normally `C:\ProgramData\Chameleon`) |
+| Linux | `$XDG_DATA_HOME/UniversalAutomation/Chameleon`, or `~/.local/share/UniversalAutomation/Chameleon` when XDG_DATA_HOME is unset or relative |
+| macOS | `~/Library/Application Support/UniversalAutomation/Chameleon` |
 | Override | Set `$env:PSU_CHAMELEON_PATH`, or pass `-Path` to the store commands |
+
+An explicit `-Path` takes precedence over the environment variable. On Linux and macOS, `~` refers to the home directory of the account running PSU. For containers, set `PSU_CHAMELEON_PATH` to a persistent mounted directory so themes survive container replacement.
+
+If you saved themes using the previous Windows default, move the JSON files from the `UniversalAutomation\Chameleon` folder under ProgramData to the new `Chameleon` folder, or set `PSU_CHAMELEON_PATH` to the previous location. Existing files are not moved automatically.
 
 The PSU service account needs read access to use themes, and write access to save them. Because themes are just files, you can commit them to source control or copy them between servers.
 
