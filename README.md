@@ -182,6 +182,16 @@ New-UDThemePicker -Themes (Get-UDChameleonTheme)
 
 ![Switching themes from the header picker](docs/images/picker.gif)
 
+### See it in action
+
+Switch between saved Chocolatey and PSU themes, then toggle light and dark mode—cards, inputs, buttons, and status alerts all follow the active theme.
+
+![Switching saved themes and light/dark mode in Theme Playground](docs/images/theme-picker-demo.gif)
+
+| Light | Dark |
+|---|---|
+| ![Chocolatey theme in light mode](docs/images/picker-chocolatey-light.png) | ![Chocolatey theme in dark mode](docs/images/picker-chocolatey-dark.png) |
+
 Choosing a theme:
 
 - Applies it **instantly** to that user's session (no reload).
