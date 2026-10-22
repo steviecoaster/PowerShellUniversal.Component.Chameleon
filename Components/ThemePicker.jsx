@@ -89,6 +89,10 @@ const ThemePicker = (props) => {
   };
 
   const current = themes.find((t) => t.name === selected);
+  const groups = [
+    { label: 'Saved', items: themes.filter((t) => !t.builtin) },
+    { label: 'Built-in', items: themes.filter((t) => t.builtin) }
+  ].filter((group) => group.items.length);
 
   if (variant === 'select') {
     return (
@@ -100,10 +104,14 @@ const ThemePicker = (props) => {
           onChange={(e) => (e.target.value ? choose(themes.find((t) => t.name === e.target.value)) : reset())}
         >
           <option value="">{showReset ? 'Default' : 'Choose a theme…'}</option>
-          {themes.map((t) => (
-            <option key={t.name} value={t.name}>
-              {t.name}
-            </option>
+          {groups.map((group) => (
+            <optgroup key={group.label} label={group.label}>
+              {group.items.map((t) => (
+                <option key={t.name} value={t.name}>
+                  {t.name}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </label>
@@ -171,17 +179,24 @@ const ThemePicker = (props) => {
               Default
             </li>
           ) : null}
-          {themes.map((t) => (
-            <li
-              key={t.name}
-              role="option"
-              aria-selected={selected === t.name}
-              title={t.description || t.name}
-              className={selected === t.name ? 'is-selected' : ''}
-              onClick={() => choose(t)}
-            >
-              <Swatches item={t} mode={mode} />
-              {t.name}
+          {groups.map((group) => (
+            <li key={group.label} className="chameleon-menu-group" role="presentation">
+              <ul role="group" aria-label={group.label}>
+                <li className="chameleon-menu-heading" role="presentation">{group.label}</li>
+                {group.items.map((t) => (
+                  <li
+                    key={t.name}
+                    role="option"
+                    aria-selected={selected === t.name}
+                    title={t.description || t.name}
+                    className={selected === t.name ? 'is-selected' : ''}
+                    onClick={() => choose(t)}
+                  >
+                    <Swatches item={t} mode={mode} />
+                    {t.name}
+                  </li>
+                ))}
+              </ul>
             </li>
           ))}
         </ul>

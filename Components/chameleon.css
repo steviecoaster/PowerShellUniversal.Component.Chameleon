@@ -596,7 +596,7 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
-.chameleon-menu li {
+.chameleon-menu li[role="option"] {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -606,13 +606,33 @@
   white-space: nowrap;
 }
 
-.chameleon-menu li:hover,
-.chameleon-menu li.is-selected {
+.chameleon-menu li[role="option"]:hover,
+.chameleon-menu li[role="option"].is-selected {
   background: var(--chameleon-hover);
 }
 
 .chameleon-menu li.is-selected {
   font-weight: 600;
+}
+
+.chameleon-menu-group,
+.chameleon-menu-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chameleon-menu-group + .chameleon-menu-group {
+  border-top: 1px solid var(--chameleon-border);
+  margin-top: 4px;
+}
+
+.chameleon-menu-heading {
+  padding: 8px 10px 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  opacity: 0.7;
+  cursor: default;
 }
 
 .chameleon-picker-grid {

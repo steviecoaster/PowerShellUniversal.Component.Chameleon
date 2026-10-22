@@ -10,7 +10,12 @@ $App = @{
     Pages = @($Pages)
     HeaderContent = {
         $Saved = @(Get-UDChameleonTheme)
-        $Choices = if ($Saved.Count) { $Saved } else { @('AntDesign', 'Paperbase', 'Sand', 'Compliment') }
+        # Keep built-ins available after saving custom themes. Saved names take precedence
+        # because the picker uses theme names as selection keys.
+        $Choices = @($Saved) + @(
+            Get-UDTheme |
+                Where-Object { $_ -notin $Saved.Name }
+        )
         New-UDThemePicker -Id 'chameleonHeaderPicker' -Themes $Choices
     }
 }
