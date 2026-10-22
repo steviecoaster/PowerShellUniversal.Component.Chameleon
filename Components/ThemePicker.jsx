@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { withComponentFeatures } from 'universal-dashboard';
 import { SELECTION_EVENT, currentVariant, readSelected, storageKeyFor, surfaceStyle, swatchesFor, writeSelected } from './themeUtils';
 
@@ -30,7 +31,48 @@ const ThemePicker = (props) => {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const rootRef = useRef(null);
+  const menuRef = useRef(null);
+  const [menuStyle, setMenuStyle] = useState({});
   const mode = currentVariant() || 'light';
+
+  // Render outside cards/dialog content that can clip absolutely positioned menus.
+  useLayoutEffect(() => {
+    if (!open) return undefined;
+    const position = () => {
+      if (!rootRef.current || !menuRef.current) return;
+      const anchor = rootRef.current.getBoundingClientRect();
+      const gap = 4;
+      const margin = 8;
+      const below = Math.max(0, window.innerHeight - anchor.bottom - gap - margin);
+      const above = Math.max(0, anchor.top - gap - margin);
+      const desired = Math.min(360, menuRef.current.scrollHeight + 2);
+      const upward = below < desired && above > below;
+      const maxHeight = Math.min(360, upward ? above : below);
+      const width = Math.min(Math.max(220, anchor.width), window.innerWidth - margin * 2);
+      setMenuStyle({
+        position: 'fixed',
+        right: 'auto',
+        left: Math.max(margin, Math.min(anchor.right - width, window.innerWidth - width - margin)),
+        top: upward ? Math.max(margin, anchor.top - gap - Math.min(desired, maxHeight)) : anchor.bottom + gap,
+        width,
+        minWidth: 0,
+        maxHeight,
+        boxSizing: 'border-box',
+        overflowY: 'auto',
+        overscrollBehavior: 'contain'
+      });
+    };
+    position();
+    const onScroll = (event) => {
+      if (!menuRef.current?.contains(event.target)) position();
+    };
+    window.addEventListener('resize', position);
+    document.addEventListener('scroll', onScroll, true);
+    return () => {
+      window.removeEventListener('resize', position);
+      document.removeEventListener('scroll', onScroll, true);
+    };
+  }, [open, themes, showReset]);
 
   useEffect(() => {
     const fullKey = storageKeyFor(storageKey);
@@ -47,7 +89,7 @@ const ThemePicker = (props) => {
   useEffect(() => {
     if (!open) return undefined;
     const close = (e) => {
-      if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false);
+      if (!rootRef.current?.contains(e.target) && !menuRef.current?.contains(e.target)) setOpen(false);
     };
     const esc = (e) => e.key === 'Escape' && setOpen(false);
     document.addEventListener('mousedown', close);
@@ -169,8 +211,8 @@ const ThemePicker = (props) => {
         <span>{current ? current.name : label}</span>
         <span className="chameleon-caret">▾</span>
       </button>
-      {open ? (
-        <ul className="chameleon-menu" role="listbox" aria-label={label} style={surfaceStyle()}>
+      {open ? createPortal(
+        <ul ref={menuRef} className="chameleon-picker chameleon-menu" role="listbox" aria-label={label} tabIndex={0} style={{ ...surfaceStyle(), ...menuStyle }}>
           {showReset ? (
             <li role="option" aria-selected={!current} className={!current ? 'is-selected' : ''} onClick={reset}>
               <span className="chameleon-swatches chameleon-swatches-empty" aria-hidden="true">
@@ -199,7 +241,8 @@ const ThemePicker = (props) => {
               </ul>
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body
       ) : null}
     </div>
   );
