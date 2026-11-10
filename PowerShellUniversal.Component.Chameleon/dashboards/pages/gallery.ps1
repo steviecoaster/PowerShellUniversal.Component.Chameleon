@@ -19,11 +19,15 @@ $b_gallery = New-UDPage -Name 'Saved Themes' -Url '/themes' -Icon (New-UDIcon -I
                     New-UDButton -Text 'Edit' -Size small -Variant outlined -OnClick {
                         Invoke-UDRedirect -Url "/builder?theme=$([uri]::EscapeDataString($ThemeName))"
                     }
-                    New-UDButton -Text 'Copy PowerShell' -Size small -Variant outlined -OnClick {
+                    New-UDButton -Text 'Copy as PowerShell' -Size small -Variant outlined -OnClick {
                         $Saved = Get-UDChameleonTheme -Name ([WildcardPattern]::Escape($ThemeName)) | Select-Object -First 1
-                        $Json = $Saved.Theme | ConvertTo-Json -Depth 64
-                        Set-UDClipboard -Data "`$Theme = '$($Json -replace "'", "''")' | ConvertFrom-Json -AsHashtable"
-                        Show-UDToast -Message "Copied $ThemeName"
+                        Set-UDClipboard -Data (ConvertTo-UDChameleonPowerShell -Theme $Saved.Theme)
+                        Show-UDToast -Message "Copied $ThemeName as PowerShell"
+                    }
+                    New-UDButton -Text 'Copy as JSON' -Size small -Variant outlined -OnClick {
+                        $Saved = Get-UDChameleonTheme -Name ([WildcardPattern]::Escape($ThemeName)) | Select-Object -First 1
+                        Set-UDClipboard -Data ($Saved.Theme | ConvertTo-Json -Depth 64)
+                        Show-UDToast -Message "Copied $ThemeName as JSON"
                     }
                     New-UDButton -Text 'Delete' -Size small -Variant outlined -Color error -OnClick {
                         Remove-UDChameleonTheme -Name $ThemeName -Confirm:$false

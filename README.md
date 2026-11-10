@@ -367,7 +367,7 @@ New-UDApp @App
 
 ## Saved Themes page
 
-The Chameleon app's **Saved Themes** page lists everything in the store. Click a card to try the theme on the app, or use the table to **Edit** (opens it in the builder), **Copy PowerShell**, or **Delete**.
+The Chameleon app's **Saved Themes** page lists everything in the store. Click a card to try the theme on the app, or use the table to **Edit** (opens it in the builder), **Copy as PowerShell**, **Copy as JSON**, or **Delete**. The copy actions use the same hashtable and JSON formats as the builder's Export menu.
 
 ![The Saved Themes page](docs/images/saved-themes.png)
 
