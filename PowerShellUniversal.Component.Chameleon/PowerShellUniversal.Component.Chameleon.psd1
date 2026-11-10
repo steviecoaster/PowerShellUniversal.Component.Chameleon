@@ -1,6 +1,6 @@
 @{
     RootModule        = 'PowerShellUniversal.Component.Chameleon.psm1'
-    ModuleVersion     = '1.3.0'
+    ModuleVersion     = '1.4.0'
     GUID              = '6f1d2c3e-8a47-4b5e-9c1a-2d7e4f0b9a31'
     Author            = 'Stephen Valdinger'
     CompanyName       = 'Unknown'
@@ -15,6 +15,7 @@
         'Save-UDChameleonTheme'
         'Remove-UDChameleonTheme'
         'ConvertTo-UDChameleonHashtable'
+        'ConvertTo-UDChameleonPowerShell'
         'ConvertTo-UDChameleonSource'
         'New-UDChameleonApp'
     )
