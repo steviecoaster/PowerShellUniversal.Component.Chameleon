@@ -511,7 +511,7 @@ PowerShellUniversal.Component.Chameleon/
 │   ├── PowerShellUniversal.Component.Chameleon.psd1
 │   ├── PowerShellUniversal.Component.Chameleon.psm1
 │   ├── public/                 # Exported PowerShell functions
-│   ├── private/                # Internal helpers
+│   ├── private/                # Internal helpers, one function per matching .ps1 file
 │   ├── dashboards/             # The Chameleon app (App.ps1 + pages/)
 │   └── .universal/dashboards.ps1 # Registers the app with PSU
 ├── docs/                       # README images; not published
