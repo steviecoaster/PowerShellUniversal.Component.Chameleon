@@ -567,7 +567,7 @@ const ThemeBuilder = (props) => {
               Export <span className="chameleon-caret">▾</span>
             </button>
             {exportOpen ? (
-              <ul className="chameleon-menu" role="menu" style={surfaceStyle()}>
+              <ul className="chameleon-menu chameleon-export-menu" role="menu" style={surfaceStyle()}>
                 <li role="menuitem" onClick={() => copy(psCode, 'PowerShell')}>
                   Copy as PowerShell
                 </li>

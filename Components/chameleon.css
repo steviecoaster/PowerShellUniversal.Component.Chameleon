@@ -611,6 +611,24 @@
   background: var(--chameleon-hover);
 }
 
+.chameleon-export-menu li[role="menuitem"] {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 150ms;
+}
+
+.chameleon-export-menu li[role="menuitem"]:hover {
+  background: var(--chameleon-hover);
+}
+
 .chameleon-menu li.is-selected {
   font-weight: 600;
 }
