@@ -181,17 +181,70 @@ const Preview = ({ theme, mode }) => {
   );
 };
 
+// PSU remounts the whole app the first time a custom theme is applied after a page load, which
+// would wipe the builder's unsaved edits. Snapshot them before applying and restore on remount.
+const DRAFT_TTL_MS = 15000;
+const draftKey = (id) => `chameleon:builder:${window.location.pathname}:${id || ''}`;
+
+const readDraft = (key) => {
+  try {
+    const draft = JSON.parse(window.sessionStorage.getItem(key) || 'null');
+    return draft && draft.work && Date.now() - draft.at < DRAFT_TTL_MS ? draft : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeDraft = (key, draft) => {
+  try {
+    window.sessionStorage.setItem(key, JSON.stringify({ ...draft, at: Date.now() }));
+  } catch {
+    // Storage may be unavailable; edits are only lost if PSU remounts the app.
+  }
+};
+
+const clearDraft = (key) => {
+  try {
+    window.sessionStorage.removeItem(key);
+  } catch {
+    // Nothing to clear.
+  }
+};
+
+const LEAVE_MESSAGE = 'You have unsaved theme changes. Leave this page and discard them?';
+
+// Identifies the theme + name so we can tell when the editor differs from what was last loaded or saved.
+const snapshotKey = (work, name) => JSON.stringify({ theme: prune(withChrome(work)), name: (name || '').trim() });
+
+// PSU's nav menu switches pages client-side, so beforeunload never fires for it. Catch those clicks
+// (and plain links) instead; modified clicks and new-tab links can't lose the editor's state.
+const isNavigationClick = (e, root) => {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return false;
+  const target = e.target instanceof Element ? e.target : null;
+  if (!target || (root && root.contains(target))) return false;
+  const anchor = target.closest('a[href]');
+  if (anchor) {
+    if (anchor.target && anchor.target !== '_self') return false;
+    if (anchor.hasAttribute('download')) return false;
+    const url = new URL(anchor.href, window.location.href);
+    return url.origin !== window.location.origin || url.pathname !== window.location.pathname;
+  }
+  return !!target.closest('.MuiDrawer-paper .MuiListItem-root, .MuiDrawer-paper .MuiListItemButton-root');
+};
+
 const ThemeBuilder = (props) => {
   const { id, name: initialName = '', theme: initialTheme, sources = [], loadResult, onSave, onApply, onReset, onLoad, height } = props || {};
 
-  const [work, setWork] = useState(() => normalizeTheme(initialTheme));
-  const [name, setName] = useState(initialName);
-  const [source, setSource] = useState('');
-  const [savedNames, setSavedNames] = useState([]);
+  const storageKey = draftKey(id);
+  const [draft] = useState(() => readDraft(storageKey));
+  const [work, setWork] = useState(() => (draft ? draft.work : normalizeTheme(initialTheme)));
+  const [name, setName] = useState(draft ? draft.name || '' : initialName);
+  const [source, setSource] = useState(draft ? draft.source || '' : '');
+  const [savedNames, setSavedNames] = useState(draft ? draft.savedNames || [] : []);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState('light');
-  const [tab, setTab] = useState('palette');
-  const [live, setLive] = useState(false);
+  const [mode, setMode] = useState(draft && draft.mode ? draft.mode : 'light');
+  const [tab, setTab] = useState(draft && draft.tab ? draft.tab : 'palette');
+  const [live, setLive] = useState(draft ? !!draft.live : false);
   const [jsonText, setJsonText] = useState('');
   const [jsonError, setJsonError] = useState('');
   const [status, setStatus] = useState(null);
@@ -200,6 +253,11 @@ const ThemeBuilder = (props) => {
   const liveTimer = useRef(null);
   const exportRef = useRef(null);
   const pendingLoad = useRef(null);
+  const mounted = useRef(false);
+  const rootRef = useRef(null);
+  const [clean, setClean] = useState(() =>
+    draft && draft.clean ? draft.clean : snapshotKey(normalizeTheme(initialTheme), initialName)
+  );
 
   useEffect(() => {
     if (!exportOpen) return undefined;
@@ -210,18 +268,50 @@ const ThemeBuilder = (props) => {
     return () => document.removeEventListener('mousedown', close);
   }, [exportOpen]);
 
+  // State is already seeded from props (or a restored draft) on mount; only follow later prop changes.
   const initialKey = typeof initialTheme === 'string' ? initialTheme : JSON.stringify(initialTheme || null);
   useEffect(() => {
-    setWork(normalizeTheme(initialTheme));
+    if (!mounted.current) return;
+    const next = normalizeTheme(initialTheme);
+    setWork(next);
+    setClean(snapshotKey(next, name));
   }, [initialKey]);
 
   useEffect(() => {
+    if (!mounted.current) return;
     setName(initialName);
+    setClean(snapshotKey(work, initialName));
   }, [initialName]);
+
+  useEffect(() => {
+    mounted.current = true;
+  }, []);
 
   const output = useMemo(() => prune(withChrome(work)), [work]);
   const psCode = useMemo(() => toPowerShell(output), [output]);
   const jsonOut = useMemo(() => JSON.stringify(output, null, 2), [output]);
+  const dirty = useMemo(() => snapshotKey(work, name) !== clean, [work, name, clean]);
+
+  useEffect(() => {
+    if (!dirty) return undefined;
+    const onBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = LEAVE_MESSAGE;
+      return LEAVE_MESSAGE;
+    };
+    const onClick = (e) => {
+      if (!isNavigationClick(e, rootRef.current)) return;
+      if (window.confirm(LEAVE_MESSAGE)) return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('click', onClick, true);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('click', onClick, true);
+    };
+  }, [dirty]);
 
   useEffect(() => {
     if (tab === 'json') {
@@ -236,15 +326,27 @@ const ThemeBuilder = (props) => {
     statusTimer.current = setTimeout(() => setStatus(null), 3500);
   };
 
+  useEffect(() => {
+    if (!draft) return;
+    clearDraft(storageKey);
+    if (draft.notice) flash(draft.notice);
+  }, []);
+
+  const snapshot = (overrides) =>
+    writeDraft(storageKey, { work, name, source, savedNames, mode, tab, live, clean, notice: '', ...overrides });
+
   const apply = async (silent) => {
     if (!onApply) return;
+    const notice = 'Applied to this app (only your browser sees it)';
+    snapshot({ notice: silent ? '' : notice });
     try {
       // Keep the app's own light/dark mode; the builder's mode chips only drive the preview card.
       await onApply({ theme: JSON.stringify(output), variant: appVariant() });
       // The app now shows the builder's theme, not any picker theme.
       writeSelected(undefined, '');
-      if (!silent) flash('Applied to this app (only your browser sees it)');
+      if (!silent) flash(notice);
     } catch (e) {
+      clearDraft(storageKey);
       flash(`Apply failed: ${e && e.message ? e.message : e}`, 'error');
     }
   };
@@ -272,9 +374,11 @@ const ThemeBuilder = (props) => {
       return;
     }
     if (!onSave) return;
+    const savedKey = snapshotKey(work, trimmed);
     try {
       await onSave({ name: trimmed, theme: JSON.stringify(output) });
       setSavedNames((n) => (n.includes(trimmed) ? n : [...n, trimmed]));
+      setClean(savedKey);
       flash(`Saved "${trimmed}"`);
     } catch (e) {
       flash(`Save failed: ${e && e.message ? e.message : e}`, 'error');
@@ -297,8 +401,10 @@ const ThemeBuilder = (props) => {
     setSource(value);
     if (!value) return;
     if (value === 'starter') {
-      setWork(normalizeTheme(STARTER_THEME));
+      const starter = normalizeTheme(STARTER_THEME);
+      setWork(starter);
       setName('');
+      setClean(snapshotKey(starter, ''));
       flash('Loaded the starter theme');
       return;
     }
@@ -323,15 +429,17 @@ const ThemeBuilder = (props) => {
       flash('Load failed: theme not found', 'error');
       return;
     }
-    setWork(normalizeTheme(data.theme));
+    const loaded = normalizeTheme(data.theme);
+    setWork(loaded);
     setName(data.name || '');
+    setClean(snapshotKey(loaded, data.name || ''));
     flash(`Loaded "${data.label || data.name}". Edit it, then Apply or Save.`);
   }, [loadResult && loadResult.nonce]);
 
-  // Deep link from the Saved Themes page: ?theme=<name>
+  // Deep link from the Saved Themes page: ?theme=<name>. A restored draft takes precedence.
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get('theme');
-    if (requested) loadSource(`saved:${requested}`);
+    if (requested && !draft) loadSource(`saved:${requested}`);
   }, []);
 
   const savedOptions = useMemo(() => {
@@ -366,7 +474,7 @@ const ThemeBuilder = (props) => {
   const other = mode === 'light' ? 'dark' : 'light';
 
   return (
-    <div id={id} className="chameleon-builder" style={height ? { height } : undefined}>
+    <div id={id} ref={rootRef} className="chameleon-builder" style={height ? { height } : undefined}>
       <div className="chameleon-toolbar">
         <div className="chameleon-toolbar-group">
           {onLoad ? (

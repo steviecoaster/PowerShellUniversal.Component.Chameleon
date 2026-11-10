@@ -490,7 +490,7 @@ sequenceDiagram
     Note over U: The theme is cached in the browser,<br/>so it survives page reloads
 ```
 
-- **The builder** keeps the theme being edited in the browser. Only *Apply*, *Save*, *Reset*, and *Start from* talk to the server.
+- **The builder** keeps the theme being edited in the browser. Only *Apply*, *Save*, *Reset*, and *Start from* talk to the server. PSU rebuilds the page the first time a custom theme is applied, so the builder briefly stashes its unsaved edits in the tab's `sessionStorage` and restores them. If you have unsaved changes, the builder asks before you reload, close the tab, or leave through the navigation menu.
 - **Start from** sends a request to the server, which looks up the theme and pushes it back to the builder with `Set-UDElement`.
 - **The picker** sends saved and hashtable themes to the browser up front. Built-in themes are looked up on the server only when chosen, which keeps the page light.
 - **Nothing is shared between users.** Applied themes live in each user's browser. Only *Save* writes to the server.
