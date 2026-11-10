@@ -108,7 +108,10 @@ Every color field has a swatch, a text box, and a **×** to reset it.
 |---|---|---|
 | **Primary / Secondary** | Main, Light, Dark, Contrast text | You usually only need **Main**. MUI derives Light (20% lighter), Dark (30% darker), and a readable contrast text color automatically. |
 | **Status** | Error, Warning, Info, Success | Used by alerts, chips, validation, and `New-UDButton -Color`. |
-| **Surfaces & text** | Background, Paper, Text, Text secondary, Divider | **Background** is the page; **Paper** is cards, tables, and menus. |
+| **Surfaces & text** | Background, Paper, Text, Text secondary, Divider | **Background** is the page and navigation drawer; **Paper** is cards, tables, and menus. |
+
+> [!NOTE]
+> MUI normally paints the dark-mode app bar and the navigation drawer with **Paper**. So that Paper only affects cards and surfaces, the builder adds `overrides` that keep the app bar on **Primary** and the drawer on **Background** in both modes. If your theme already sets those overrides (for example, Paperbase's dark drawer), your values win.
 
 > [!TIP]
 > Working from a design system with a numbered scale (like Bootstrap's `$blue-300` / `$blue` / `$blue-700`)? Map those to **Light**, **Main**, and **Dark** to match your brand exactly instead of letting MUI derive them.
@@ -121,7 +124,7 @@ Themes have independent **light** and **dark** palettes. Use the **☀ Light** /
 
 **Copy light palette to dark** (or the reverse) duplicates the current palette into the other mode as a starting point.
 
-Users switch between modes with PSU's built-in toggle in the app header. The theme picker keeps whichever mode the user has chosen. The builder's **Apply** uses the mode you're editing, so you can check each palette on the real app.
+Users switch between modes with PSU's built-in toggle in the app header. The theme picker keeps whichever mode the user has chosen. The builder's mode chips only change what you're editing and the preview; **Apply** and **Live** keep the app in its current mode, so flip the header toggle to check the other palette on the real app.
 
 ### Typography and shape
 
@@ -145,7 +148,7 @@ The mock preview is quick, but nothing beats seeing your theme on real component
 
 | Control | What it does |
 |---|---|
-| **Apply** | Applies the current theme to the app, in the mode you're editing (light or dark). |
+| **Apply** | Applies the current theme to the app, keeping the app's current light or dark mode. |
 | **Live** | Re-applies automatically ~0.5 seconds after every edit. Change a color and watch the header, buttons, and menus update. |
 | **Reset** | Puts the app back to its own configured theme. |
 

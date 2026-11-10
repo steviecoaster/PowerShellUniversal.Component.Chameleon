@@ -6,6 +6,7 @@ import {
   STARTER_THEME,
   alpha,
   copyText,
+  appVariant,
   getPath,
   normalizeTheme,
   prune,
@@ -14,6 +15,7 @@ import {
   surfaceStyle,
   toHex6,
   toPowerShell,
+  withChrome,
   writeSelected
 } from './themeUtils';
 
@@ -217,7 +219,7 @@ const ThemeBuilder = (props) => {
     setName(initialName);
   }, [initialName]);
 
-  const output = useMemo(() => prune(work), [work]);
+  const output = useMemo(() => prune(withChrome(work)), [work]);
   const psCode = useMemo(() => toPowerShell(output), [output]);
   const jsonOut = useMemo(() => JSON.stringify(output, null, 2), [output]);
 
@@ -237,10 +239,11 @@ const ThemeBuilder = (props) => {
   const apply = async (silent) => {
     if (!onApply) return;
     try {
-      await onApply({ theme: JSON.stringify(output), variant: mode });
+      // Keep the app's own light/dark mode; the builder's mode chips only drive the preview card.
+      await onApply({ theme: JSON.stringify(output), variant: appVariant() });
       // The app now shows the builder's theme, not any picker theme.
       writeSelected(undefined, '');
-      if (!silent) flash(`Applied to this app in ${mode} mode (only your browser sees it)`);
+      if (!silent) flash('Applied to this app (only your browser sees it)');
     } catch (e) {
       flash(`Apply failed: ${e && e.message ? e.message : e}`, 'error');
     }
@@ -251,7 +254,7 @@ const ThemeBuilder = (props) => {
     clearTimeout(liveTimer.current);
     liveTimer.current = setTimeout(() => apply(true), 600);
     return () => clearTimeout(liveTimer.current);
-  }, [live, output, mode]);
+  }, [live, output]);
 
   const setPalette = (path, value) => setWork((w) => setPath(w, [mode, 'palette', ...path], value));
 
@@ -422,7 +425,7 @@ const ThemeBuilder = (props) => {
               <button
                 type="button"
                 className="chameleon-btn chameleon-btn-outlined"
-                title={`Apply this theme to the app you are using now, in ${mode} mode. Only your browser is affected.`}
+                title="Apply this theme to the app you are using now, keeping its current light/dark mode. Only your browser is affected."
                 onClick={() => apply(false)}
               >
                 Apply

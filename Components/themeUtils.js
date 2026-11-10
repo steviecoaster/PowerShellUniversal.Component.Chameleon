@@ -113,7 +113,7 @@ export const normalizeTheme = (input) => {
   MODES.forEach((mode) => {
     result[mode] = setPath(result[mode], ['palette', 'mode'], mode);
   });
-  return prune(result);
+  return prune(stripChrome(result));
 };
 
 export const paletteOf = (theme, mode = 'light') => {
@@ -141,6 +141,38 @@ export const resolveColors = (theme, mode) => {
     divider: p.divider || (mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)')
   };
 };
+
+// MUI paints the dark-mode AppBar and the nav Drawer with background.paper, so editing Paper would
+// recolor the app chrome. Pin them to primary/background so Paper only affects cards and surfaces.
+// Uses PSU's `overrides` theme key (MUI v4 style), which PSU maps onto component style overrides.
+const CHROME = [
+  [['MuiAppBar', 'colorPrimary', 'backgroundColor'], (c) => c.primary],
+  [['MuiAppBar', 'colorPrimary', 'color'], (c) => c.primaryContrast],
+  [['MuiAppBar', 'colorPrimary', 'backgroundImage'], () => 'none'],
+  [['MuiDrawer', 'paper', 'backgroundColor'], (c) => c.background],
+  [['MuiDrawer', 'paper', 'backgroundImage'], () => 'none']
+];
+
+const sameValue = (a, b) => String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+
+const mapChrome = (theme, update) =>
+  MODES.reduce((acc, mode) => {
+    if (!isPlainObject(acc[mode])) return acc;
+    const c = resolveColors(acc, mode);
+    const section = CHROME.reduce((s, [path, value]) => {
+      const full = ['overrides', ...path];
+      return update(s, full, getPath(s, full), value(c));
+    }, acc[mode]);
+    return { ...acc, [mode]: section };
+  }, theme);
+
+// Adds the chrome overrides unless the theme already sets its own value.
+export const withChrome = (theme) =>
+  mapChrome(theme, (s, path, current, auto) => (current === undefined ? setPath(s, path, auto) : s));
+
+// Drops chrome overrides that match the generated value, so they keep tracking palette edits.
+export const stripChrome = (theme) =>
+  mapChrome(theme, (s, path, current, auto) => (current !== undefined && sameValue(current, auto) ? setPath(s, path, undefined) : s));
 
 export const swatchesFor = (theme, mode = 'light') => {
   const c = resolveColors(theme, mode);
@@ -257,4 +289,16 @@ export const currentVariant = () => {
   } catch {
     return '';
   }
+};
+
+// PSU only stores the mode once the user flips its toggle; otherwise infer it from the body
+// background, which MUI's CssBaseline paints with background.default.
+export const appVariant = () => {
+  const stored = currentVariant();
+  if (stored) return stored;
+  const bg = window.getComputedStyle(document.body).backgroundColor || '';
+  const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/.exec(bg);
+  if (!m || (m[4] !== undefined && Number(m[4]) === 0)) return '';
+  const hex = '#' + m.slice(1, 4).map((n) => Number(n).toString(16).padStart(2, '0')).join('');
+  return contrastText(hex) === '#ffffff' ? 'dark' : 'light';
 };
