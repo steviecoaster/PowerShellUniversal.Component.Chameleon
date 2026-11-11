@@ -558,7 +558,7 @@ Publish-PSResource @Publish
 
 Set `PSGALLERY_API_KEY` securely in your environment before publishing. Each Gallery release needs a new version; an already-published version cannot be overwritten. Do not edit the output manifest directly because the next build replaces it.
 
-The build stages only the manifest, module loader, compiled JavaScript assets, PowerShell functions, app pages, and PSU registration. Git metadata, Node dependencies, React source, build configuration, and documentation stay outside the package. `.gitignore` controls Git tracking; it does **not** control what `Publish-PSResource` packages. The source module folder does not contain the compiled bundle until it is staged, so always publish from `output`.
+The build stages only the manifest, module loader, compiled JavaScript assets, PowerShell functions, app pages, PSU registration, and the [MIT license](LICENSE). Git metadata, Node dependencies, React source, build configuration, and documentation stay outside the package. `.gitignore` controls Git tracking; it does **not** control what `Publish-PSResource` packages. The source module folder does not contain the compiled bundle until it is staged, so always publish from `output`.
 
 ---
 
@@ -567,6 +567,7 @@ The build stages only the manifest, module loader, compiled JavaScript assets, P
 | Symptom | Cause and fix |
 |---|---|
 | A component shows **"One or more errors occurred / Unknown error occurred"** | The JavaScript bundle failed to load or register. Open the browser's developer console for the real error; PSU's logs won't show it. Most often the app wasn't restarted after the bundle was replaced. |
+| Chameleon shows **"Cannot read properties of undefined (reading 'url')"**, possibly followed by an unauthorized redirect after upgrading | The bundled page files must assign `$builder` and `$gallery`, matching their filenames. Older `$a_builder` / `$b_gallery` assignments prevent the app from loading its pages. Deploy the corrected module and restart the app; do not disable authentication to work around this error. |
 | The page returns **404** after deploying | Replacing module files stops the app. Restart it in the admin console. |
 | **Apply**, the picker, or **Reset** does nothing | The module isn't loaded in the app's runspace. Add `Import-Module PowerShellUniversal.Component.Chameleon` to the app, or set `-Module` on `New-PSUApp`. |
 | **Save** fails | The PSU service account can't write to the theme store. Grant access or set `$env:PSU_CHAMELEON_PATH` to a writable folder. |

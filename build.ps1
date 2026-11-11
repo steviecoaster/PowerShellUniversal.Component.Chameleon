@@ -38,6 +38,7 @@ try {
     # Stage only runtime assets; never copy the repository or development folders.
     Copy-Item -Path (Join-Path $PSScriptRoot 'dist\*') -Destination $OutputPath
     Copy-Item -Path (Join-Path $ModulePath 'PowerShellUniversal.Component.Chameleon.ps*1') -Destination $OutputPath
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'LICENSE') -Destination $OutputPath
     foreach ($Folder in 'public', 'private', 'dashboards', '.universal') {
         Copy-Item -Path (Join-Path $ModulePath $Folder) -Destination $OutputPath -Recurse -Force
     }

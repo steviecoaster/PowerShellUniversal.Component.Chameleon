@@ -1,4 +1,4 @@
-$b_gallery = New-UDPage -Name 'Saved Themes' -Url '/themes' -Icon (New-UDIcon -Icon 'Palette') -Content {
+$gallery = New-UDPage -Name 'Saved Themes' -Url '/themes' -Icon (New-UDIcon -Icon 'Palette') -Content {
     New-UDDynamic -Id 'chameleonGallery' -Content {
         $Saved = @(Get-UDChameleonTheme)
 
