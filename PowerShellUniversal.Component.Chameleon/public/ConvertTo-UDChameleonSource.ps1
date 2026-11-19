@@ -31,7 +31,8 @@ function ConvertTo-UDChameleonSource {
         }
         'builtin' {
             # Only accept known names; Get-UDTheme -Name builds a file path from it.
-            if ($Name -cin @(Get-ChameleonBuiltInName)) {
+            $Script:BuiltInThemeNames ??= @((@('MaterialDesign') + @(Get-UDTheme -ErrorAction Stop)) | Select-Object -Unique)
+            if ($Name -cin $Script:BuiltInThemeNames) {
                 $Base = ($Name -replace '[^A-Za-z0-9 _\-\.]', '').Trim()
                 @{
                     name  = $Base.Substring(0, [Math]::Min(56, $Base.Length)) + ' Custom'

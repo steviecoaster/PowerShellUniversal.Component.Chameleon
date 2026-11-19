@@ -35,7 +35,8 @@ function Set-UDChameleonTheme {
 
     if ($PSCmdlet.ParameterSetName -eq 'Name') {
         # Only accept known names; Get-UDTheme -Name builds a file path from it.
-        if ($Name -cnotin @(Get-ChameleonBuiltInName) + @(Get-UDTheme)) {
+        $Script:BuiltInThemeNames ??= @((@('MaterialDesign') + @(Get-UDTheme -ErrorAction Stop)) | Select-Object -Unique)
+        if ($Name -cnotin $Script:BuiltInThemeNames) {
             throw "Unknown built-in theme '$Name'."
         }
         $Hashtable = Get-UDTheme -Name $Name

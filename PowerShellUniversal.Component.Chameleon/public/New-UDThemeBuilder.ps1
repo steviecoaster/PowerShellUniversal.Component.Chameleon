@@ -111,11 +111,14 @@ function New-UDThemeBuilder {
     $Sources = @()
     $Load = $null
     if (-not $HideStartFrom) {
+        # PSU supports MaterialDesign by name but some versions omit it from the list.
+        $Script:BuiltInThemeNames ??= @((@('MaterialDesign') + @(Get-UDTheme -ErrorAction Stop)) | Select-Object -Unique)
         $Sources = @(
             foreach ($Saved in Get-UDChameleonTheme) {
                 @{ value = "saved:$($Saved.Name)"; label = $Saved.Name; group = 'Saved' }
             }
-            foreach ($BuiltIn in Get-ChameleonBuiltInName) {
+
+            foreach ($BuiltIn in $Script:BuiltInThemeNames) {
                 @{ value = "builtin:$BuiltIn"; label = $BuiltIn; group = 'Built-in' }
             }
         )

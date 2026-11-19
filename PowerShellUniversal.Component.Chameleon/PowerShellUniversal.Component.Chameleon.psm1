@@ -1,6 +1,9 @@
 # Register the component bundle with PSU. Guarded because the module can be imported
 # outside of a PSU host where the UniversalDashboard types aren't loaded.
 $Script:AssetId = $null
+# Load on first use: the module can be imported before PSU's theme commands are available.
+$Script:BuiltInThemeNames = $null
+$Script:BuiltInThemeSwatches = [hashtable]::new([StringComparer]::Ordinal)
 try {
     $null = [UniversalDashboard.Services.AssetService]
 

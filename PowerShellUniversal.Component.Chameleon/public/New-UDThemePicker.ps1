@@ -11,7 +11,8 @@ function New-UDThemePicker {
     Component ID.
 
     .PARAMETER Themes
-    Themes to offer. Accepts any mix of:
+    Themes to offer. Defaults to all saved and built-in themes, with saved names taking precedence.
+    Accepts any mix of:
     - Built-in theme names (strings from Get-UDTheme)
     - Get-UDChameleonTheme results
     - Hashtables/objects with Name and Theme (and optional Description, Colors)
@@ -48,7 +49,7 @@ function New-UDThemePicker {
         [Parameter()]
         [string]$Id = (New-Guid).ToString(),
 
-        [Parameter(Mandatory)]
+        [Parameter()]
         [AllowEmptyCollection()]
         [object[]]$Themes,
 
@@ -69,6 +70,12 @@ function New-UDThemePicker {
         [Endpoint]$OnChange
     )
 
+    if (-not $PSBoundParameters.ContainsKey('Themes')) {
+        $Script:BuiltInThemeNames ??= @((@('MaterialDesign') + @(Get-UDTheme -ErrorAction Stop)) | Select-Object -Unique)
+        $Saved = @(Get-UDChameleonTheme)
+        $Themes = $Saved + @($Script:BuiltInThemeNames | Where-Object { $_ -notin $Saved.Name })
+    }
+
     $Items = @(
         if ($Themes.Count -eq 1 -and $Themes[0] -is [System.Collections.IDictionary] -and -not $Themes[0].Contains('Name')) {
             foreach ($Key in $Themes[0].Keys) {
@@ -80,24 +87,24 @@ function New-UDThemePicker {
         }
     )
 
-    $BuiltIn = $null
     $Options = foreach ($Item in $Items) {
         if ($null -eq $Item) {
             continue
         }
 
         if ($Item -is [string]) {
-            if ($null -eq $BuiltIn) {
-                $BuiltIn = @(Get-ChameleonBuiltInName) + @(Get-UDTheme)
-            }
-            if ($Item -cnotin $BuiltIn) {
+            $Script:BuiltInThemeNames ??= @((@('MaterialDesign') + @(Get-UDTheme -ErrorAction Stop)) | Select-Object -Unique)
+            if ($Item -cnotin $Script:BuiltInThemeNames) {
                 Write-Warning "Skipping unknown built-in theme '$Item'."
                 continue
+            }
+            if (-not $Script:BuiltInThemeSwatches.ContainsKey($Item)) {
+                $Script:BuiltInThemeSwatches[$Item] = @(Get-ChameleonSwatch -Theme (Get-UDTheme -Name $Item -ErrorAction Stop))
             }
             @{
                 name    = $Item
                 builtin = $true
-                colors  = @(Get-ChameleonSwatch -Theme (Get-UDTheme -Name $Item))
+                colors  = @($Script:BuiltInThemeSwatches[$Item])
             }
             continue
         }
